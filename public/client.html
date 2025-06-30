@@ -2,109 +2,257 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Quiz multijoueur</title>
+    <title>Quiz Multijoueur</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:700,400&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --accent: #06b6d4;
+            --success: #22c55e;
+            --error: #ef4444;
+            --bg: #f5f7fa;
+            --card-bg: #fff;
+            --text: #22223b;
+            --radius: 18px;
+            --shadow: 0 6px 24px rgba(30,58,138,0.06);
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Montserrat', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 0;
+        }
+        main {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            max-width: 370px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 2rem 1.5rem;
+            position: relative;
+            animation: pop-in 0.6s cubic-bezier(.36,1.61,.22,.92);
+        }
+        @keyframes pop-in {
+            0% { transform: scale(.7) translateY(40px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        h1, h2 { text-align: center; font-weight: 700; margin-bottom: 20px; color: var(--primary);}
+        #connexion input, #quiz input {
+            width: 100%;
+            padding: 0.7em 1em;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            font-size: 1em;
+            margin-bottom: 14px;
+            outline: none;
+            background: #f0f2fa;
+            transition: border 0.2s;
+        }
+        #connexion input:focus, #quiz input:focus { border: 1.5px solid var(--accent);}
+        button {
+            width: 100%;
+            padding: 0.75em;
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            font-size: 1.1em;
+            cursor: pointer;
+            background: var(--primary);
+            color: #fff;
+            transition: background .2s, box-shadow .2s, scale .15s;
+            box-shadow: 0 2px 8px rgba(30,58,138,0.07);
+        }
+        button:active { scale: .96; }
+        #startBtn, #quiz button, #connexion button { margin-top: 10px; }
+        #quiz { text-align: center;}
+        #question { min-height: 55px; }
+        #chrono {
+            margin: 10px auto 22px;
+            font-size: 1.05em;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 1em;
+            display: inline-block;
+            padding: 0.2em 1em;
+            letter-spacing: 0.04em;
+        }
+        #choix-container { margin: 16px 0 10px 0; display: flex; flex-wrap: wrap; justify-content: center;}
+        #choix-container button {
+            background: #fff;
+            color: var(--primary);
+            border: 2px solid var(--accent);
+            margin: 8px 8px 0 0;
+            flex: 1 1 43%;
+            min-width: 120px;
+            max-width: 160px;
+            transition: background .2s, color .2s, border .2s;
+        }
+        #choix-container button:hover, #choix-container button.selected {
+            background: var(--accent);
+            color: #fff;
+            border: 2px solid var(--primary);
+        }
+        #choix-container p {
+            width: 100%;
+            text-align: center;
+            margin-top: 12px;
+            font-weight: 600;
+            color: var(--success);
+        }
+        #joueurs {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0 0;
+            text-align: left;
+            max-height: 110px;
+            overflow-y: auto;
+            font-size: 1.02em;
+        }
+        #joueurs li {
+            background: #eef2fb;
+            margin: 0 0 7px 0;
+            border-radius: 6px;
+            padding: 7px 10px;
+            display: flex; align-items: center;
+        }
+        #joueurs li:before {
+            content: '👤'; margin-right: 8px; font-size: 1.2em;
+        }
+        #classement { text-align: center;}
+        #classement ol { padding-left: 20px; margin: 0 auto; max-width: 220px;}
+        #classement li {
+            padding: 10px 0 6px 0; font-weight: 600;
+            font-size: 1.13em; color: var(--primary);
+            border-bottom: 1px solid #e5e7eb;
+        }
+        #classement li:first-child { color: var(--success); }
+        @media (max-width: 600px) {
+            .card { max-width: 97vw; padding: 1.3rem 0.5rem;}
+            #choix-container button { min-width: 90px; font-size: .98em;}
+        }
+    </style>
 </head>
 <body>
-    <h1>🎮 Quiz Multijoueur</h1>
+<main>
+    <div class="card">
+        <h1>🎮 Quiz Multijoueur</h1>
 
-    <div id="connexion">
-        <input id="pseudo" placeholder="Votre pseudo">
-        <input id="room" placeholder="Nom de la salle">
-        <button onclick="rejoindre()">Rejoindre</button>
+        <div id="connexion">
+            <input id="pseudo" placeholder="Votre pseudo">
+            <input id="room" placeholder="Nom de la salle">
+            <button onclick="rejoindre()"><i class="fa fa-sign-in-alt"></i> Rejoindre</button>
+        </div>
+
+        <div id="quiz" style="display:none;">
+            <h2 id="question"></h2>
+            <p id="chrono">⏳ Temps restant : 10s</p>
+            <div id="choix-container"></div>
+            <ul id="joueurs"></ul>
+            <button id="startBtn" onclick="lancerQuiz()"><i class="fa fa-play"></i> Démarrer le quiz</button>
+        </div>
+
+        <div id="classement" style="display:none;">
+            <h2>🏁 Classement Final</h2>
+            <ol id="resultats"></ol>
+        </div>
     </div>
-
-    <div id="quiz" style="display:none;">
-        <h2 id="question"></h2>
-        <p id="chrono">⏳ Temps restant : 10s</p>
-        <div id="choix-container"></div>
-        <ul id="joueurs"></ul>
-        <button onclick="lancerQuiz()">🚀 Démarrer le quiz</button>
-    </div>
-
-    <div id="classement" style="display:none;">
-        <h2>🏁 Classement Final</h2>
-        <ol id="resultats"></ol>
-    </div>
-
+</main>
 <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let room = '';
-        let chrono;
-        let chronoRestant = 10;
+<script>
+    const socket = io();
+    let room = '';
+    let chrono;
+    let chronoRestant = 10;
 
-        function rejoindre() {
-            const pseudo = document.getElementById('pseudo').value;
-            room = document.getElementById('room').value;
+    function rejoindre() {
+        const pseudo = document.getElementById('pseudo').value.trim();
+        room = document.getElementById('room').value.trim();
 
-            socket.emit('joinRoom', { pseudo, room });
-
-            document.getElementById('connexion').style.display = 'none';
-            document.getElementById('quiz').style.display = 'block';
+        if (!pseudo || !room) {
+            alert("Entrez votre pseudo et le nom de la salle !");
+            return;
         }
+        socket.emit('joinRoom', { pseudo, room });
 
-        function lancerQuiz() {
-            socket.emit('startQuiz');
-        }
+        document.getElementById('connexion').style.display = 'none';
+        document.getElementById('quiz').style.display = 'block';
+    }
 
-        function afficherChrono() {
-            const chronoElement = document.getElementById('chrono');
+    function lancerQuiz() {
+        socket.emit('startQuiz');
+        document.getElementById('startBtn').style.display = "none";
+    }
+
+    function afficherChrono() {
+        const chronoElement = document.getElementById('chrono');
+        chronoElement.textContent = `⏳ Temps restant : ${chronoRestant}s`;
+
+        chrono = setInterval(() => {
+            chronoRestant--;
             chronoElement.textContent = `⏳ Temps restant : ${chronoRestant}s`;
 
-            chrono = setInterval(() => {
-                chronoRestant--;
-                chronoElement.textContent = `⏳ Temps restant : ${chronoRestant}s`;
+            if (chronoRestant <= 0) {
+                clearInterval(chrono);
+                document.getElementById('choix-container').innerHTML = '<p style="color:var(--error)">⏱ Temps écoulé !</p>';
+            }
+        }, 1000);
+    }
 
-                if (chronoRestant <= 0) {
-                    clearInterval(chrono);
-                    document.getElementById('choix-container').innerHTML = '<p>⏱ Temps écoulé !</p>';
-                    // Laisser le serveur envoyer la prochaine question automatiquement
-                }
-            }, 1000);
-        }
+    socket.on('newQuestion', (data) => {
+        document.getElementById('startBtn').style.display = "none";
+        document.getElementById('question').textContent = `Q${data.numero} : ${data.question}`;
+        const container = document.getElementById('choix-container');
+        container.innerHTML = '';
+        chronoRestant = 10;
+        clearInterval(chrono);
+        afficherChrono();
 
-        socket.on('newQuestion', (data) => {
-            document.getElementById('question').textContent = `Q${data.numero} : ${data.question}`;
-            const container = document.getElementById('choix-container');
-            container.innerHTML = '';
-            chronoRestant = 10;
-            clearInterval(chrono);
-            afficherChrono();
-
-            data.choix.forEach(option => {
-                const btn = document.createElement('button');
-                btn.textContent = option;
-                btn.onclick = () => {
-                    clearInterval(chrono);
-                    socket.emit('submitAnswer', option);
-                    container.innerHTML = '<p>✅ Réponse envoyée !</p>';
-                };
-                container.appendChild(btn);
-            });
+        data.choix.forEach(option => {
+            const btn = document.createElement('button');
+            btn.textContent = option;
+            btn.onclick = () => {
+                clearInterval(chrono);
+                socket.emit('submitAnswer', option);
+                // Met en surbrillance la réponse
+                Array.from(container.children).forEach(child => child.classList.remove('selected'));
+                btn.classList.add('selected');
+                container.innerHTML = '<p>✅ Réponse envoyée !</p>';
+            };
+            container.appendChild(btn);
         });
+    });
 
-        socket.on('updatePlayers', (joueurs) => {
-            const ul = document.getElementById('joueurs');
-            ul.innerHTML = '';
-            joueurs.forEach(joueur => {
-                const li = document.createElement('li');
-                li.textContent = `${joueur.pseudo} - ${joueur.score} pts`;
-                ul.appendChild(li);
-            });
+    socket.on('updatePlayers', (joueurs) => {
+        const ul = document.getElementById('joueurs');
+        ul.innerHTML = '';
+        joueurs.forEach(joueur => {
+            const li = document.createElement('li');
+            li.textContent = `${joueur.pseudo} - ${joueur.score} pts`;
+            ul.appendChild(li);
         });
+    });
 
-        socket.on('endQuiz', (classement) => {
-            document.getElementById('quiz').style.display = 'none';
-            document.getElementById('classement').style.display = 'block';
+    socket.on('endQuiz', (classement) => {
+        document.getElementById('quiz').style.display = 'none';
+        document.getElementById('classement').style.display = 'block';
 
-            const ol = document.getElementById('resultats');
-            ol.innerHTML = '';
-            classement.forEach(joueur => {
-                const li = document.createElement('li');
-                li.textContent = `${joueur.pseudo} - ${joueur.score} pts`;
-                ol.appendChild(li);
-            });
+        const ol = document.getElementById('resultats');
+        ol.innerHTML = '';
+        classement.forEach((joueur, idx) => {
+            const li = document.createElement('li');
+            li.innerHTML = `${idx === 0 ? "🥇 " : ""}${joueur.pseudo} - <span>${joueur.score} pts</span>`;
+            ol.appendChild(li);
         });
-    </script>
+    });
+</script>
 </body>
 </html>
