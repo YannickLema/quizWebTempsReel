@@ -23,7 +23,13 @@ io.on('connection', (socket) => {
         socket.room = room;
 
         if (!rooms.has(room)) {
-            rooms.set(room, { joueurs: new Map(), currentQuestionIndex: 0, started: false });
+            rooms.set(room, { 
+                joueurs: new Map(), 
+                currentQuestionIndex: 0, 
+                started: false,
+                reponsesRecues: new Set(),
+                timer: null
+            });
         }
 
         rooms.get(room).joueurs.set(socket.id, { pseudo, score: 0 });
@@ -33,15 +39,25 @@ io.on('connection', (socket) => {
 
     socket.on('startQuiz', () => {
         const room = socket.room;
-        if (!rooms.get(room).started) {
-            rooms.get(room).started = true;
+        const salle = rooms.get(room);
+        if (!salle.started) {
+            salle.started = true;
+            salle.currentQuestionIndex = 0;
             envoyerQuestion(room);
         }
     });
 
     socket.on('submitAnswer', (reponse) => {
-        const { room, pseudo } = socket;
+        const { room } = socket;
         const salle = rooms.get(room);
+        if (!salle) return;
+        if (!salle.reponsesRecues) salle.reponsesRecues = new Set();
+
+        // Ne compter qu'une seule réponse par joueur
+        if (salle.reponsesRecues.has(socket.id)) return;
+
+        salle.reponsesRecues.add(socket.id);
+
         const questionActuelle = questions[salle.currentQuestionIndex];
         const joueur = salle.joueurs.get(socket.id);
 
@@ -50,6 +66,12 @@ io.on('connection', (socket) => {
         }
 
         io.to(room).emit('updatePlayers', [...salle.joueurs.values()]);
+
+        // SI TOUS LES JOUEURS ONT RÉPONDU, passer à la question suivante tout de suite
+        if (salle.reponsesRecues.size === salle.joueurs.size) {
+            clearTimeout(salle.timer);
+            passerALaQuestionSuivante(room);
+        }
     });
 
     socket.on('disconnect', () => {
@@ -64,6 +86,9 @@ io.on('connection', (socket) => {
 
 function envoyerQuestion(room) {
     const salle = rooms.get(room);
+    if (!salle) return;
+    salle.reponsesRecues = new Set(); // Reset pour la nouvelle question
+
     if (salle.currentQuestionIndex < questions.length) {
         const question = questions[salle.currentQuestionIndex];
         io.to(room).emit('newQuestion', {
@@ -72,15 +97,21 @@ function envoyerQuestion(room) {
             choix: question.choix
         });
 
-
-        setTimeout(() => {
-            salle.currentQuestionIndex += 1;
-            envoyerQuestion(room);
-        }, 20000); // 20 secondes
+        // Timer pour passer à la question suivante au bout de 10 secondes
+        salle.timer = setTimeout(() => {
+            passerALaQuestionSuivante(room);
+        }, 10000);
     } else {
         const classement = [...salle.joueurs.values()].sort((a, b) => b.score - a.score);
         io.to(room).emit('endQuiz', classement);
     }
+}
+
+function passerALaQuestionSuivante(room) {
+    const salle = rooms.get(room);
+    if (!salle) return;
+    salle.currentQuestionIndex += 1;
+    envoyerQuestion(room);
 }
 
 server.listen(PORT, () => {

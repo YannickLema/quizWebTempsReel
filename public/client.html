@@ -15,6 +15,7 @@
 
     <div id="quiz" style="display:none;">
         <h2 id="question"></h2>
+        <p id="chrono">⏳ Temps restant : 10s</p>
         <div id="choix-container"></div>
         <ul id="joueurs"></ul>
         <button onclick="lancerQuiz()">🚀 Démarrer le quiz</button>
@@ -29,6 +30,8 @@
     <script>
         const socket = io();
         let room = '';
+        let chrono;
+        let chronoRestant = 10;
 
         function rejoindre() {
             const pseudo = document.getElementById('pseudo').value;
@@ -44,23 +47,41 @@
             socket.emit('startQuiz');
         }
 
+        function afficherChrono() {
+            const chronoElement = document.getElementById('chrono');
+            chronoElement.textContent = `⏳ Temps restant : ${chronoRestant}s`;
+
+            chrono = setInterval(() => {
+                chronoRestant--;
+                chronoElement.textContent = `⏳ Temps restant : ${chronoRestant}s`;
+
+                if (chronoRestant <= 0) {
+                    clearInterval(chrono);
+                    document.getElementById('choix-container').innerHTML = '<p>⏱ Temps écoulé !</p>';
+                    // Laisser le serveur envoyer la prochaine question automatiquement
+                }
+            }, 1000);
+        }
+
         socket.on('newQuestion', (data) => {
             document.getElementById('question').textContent = `Q${data.numero} : ${data.question}`;
-
             const container = document.getElementById('choix-container');
             container.innerHTML = '';
+            chronoRestant = 10;
+            clearInterval(chrono);
+            afficherChrono();
 
             data.choix.forEach(option => {
                 const btn = document.createElement('button');
                 btn.textContent = option;
                 btn.onclick = () => {
+                    clearInterval(chrono);
                     socket.emit('submitAnswer', option);
                     container.innerHTML = '<p>✅ Réponse envoyée !</p>';
                 };
                 container.appendChild(btn);
             });
         });
-
 
         socket.on('updatePlayers', (joueurs) => {
             const ul = document.getElementById('joueurs');
