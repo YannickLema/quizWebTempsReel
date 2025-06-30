@@ -1,0 +1,17 @@
+[
+  {
+    "question": "Quelle est la capitale de l’Espagne ?",
+    "reponse": "Madrid",
+    "choix": ["Madrid", "Barcelone", "Lisbonne", "Rome"]
+  },
+  {
+    "question": "Combien font 3 x 4 ?",
+    "reponse": "12",
+    "choix": ["9", "12", "15", "18"]
+  },
+  {
+    "question": "Langage utilisé côté client ?",
+    "reponse": "JavaScript",
+    "choix": ["Python", "PHP", "JavaScript", "Ruby"]
+  }
+]
